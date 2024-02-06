@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Flutter actions
+      uses: subosito/flutter-action@v1
+      with:
+        flutter-version: '2.0.6'
+
+    - name: Install dependencies
+      run: flutter pub get
+
+    - name: Run tests
+      run: flutter test
+
+    - name: Build APK
+      run: flutter build apk
+
+    - name: Build IPA
+      run: flutter build ios --release --no-codesign
+
+    - name: Upload APK to Release
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ github.event.release.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+        asset_path: ./build/app/outputs/flutter-apk/app-release.apk
+        asset_name: app-release.apk
+        asset_content_type: application/vnd.android.package-archive
+
+    - name: Upload IPA to Release
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./build/ios/iphoneos/Runner.app
+        asset_name: Runner.ipa
+        asset_content_type: application/octet-stream
